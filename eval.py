@@ -16,24 +16,32 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 def main(args):
-
+    
     args.dsa = True if args.dsa == 'True' else False
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
     channel, im_size, num_classes, class_names, mean, std, dst_train, dst_test, testloader, loader_train_dict, class_map, class_map_inv = get_dataset(args.dataset, args.data_path, args.batch_real, args.subset, args=args)
     model_eval_pool = get_eval_pool(args.eval_mode, args.model, args.model)
+    
+    if args.dsa:
+        # args.epoch_eval_train = 1000
+        args.dc_aug_param = None
+
+    args.dsa_param = ParamDiffAug()
+
+    dsa_params = args.dsa_param
+    if args.zca:
+        zca_trans = args.zca_trans
+    else:
+        zca_trans = None
+        
+    args.dsa_param = dsa_params
+    args.zca_trans = zca_trans
 
     image_syn = torch.load(args.syn_image, map_location="cpu").requires_grad_(False).to(args.device)
     label_syn = torch.load(args.syn_label, map_location="cpu").requires_grad_(False).to(args.device)
-    ''' initialize the synthetic data '''
-    # label_syn = torch.tensor([np.ones(args.ipc,dtype=np.int_)*i for i in range(num_classes)], dtype=torch.long, requires_grad=False, device=args.device).view(-1) # [0,0,0, 1,1,1, ..., 9,9,9]
 
-    # if args.texture:
-    #     image_syn = torch.randn(size=(num_classes * args.ipc, channel, im_size[0]*args.canvas_size, im_size[1]*args.canvas_size), dtype=torch.float)
-    # else:
-    #     image_syn = torch.randn(size=(num_classes * args.ipc, channel, im_size[0], im_size[1]), dtype=torch.float)
-
-
+    print("evaluate mode: l", model_eval_pool)
     for model_eval in model_eval_pool:
         print('-------------------------\nEvaluation\nmodel_train = %s, model_eval = %s'%(args.model, model_eval))
         if args.dsa:
@@ -76,7 +84,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--ipc', type=int, default=1, help='image(s) per class')
 
-    parser.add_argument('--eval_mode', type=str, default='S',
+    parser.add_argument('--eval_mode', type=str, def_ault='S',
                         help='eval_mode, check utils.py for more info')
 
     parser.add_argument('--num_eval', type=int, default=5, help='how many networks to evaluate on')
@@ -89,6 +97,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr_img', type=float, default=1000, help='learning rate for updating synthetic images')
     parser.add_argument('--lr_lr', type=float, default=1e-05, help='learning rate for updating... learning rate')
     parser.add_argument('--lr_teacher', type=float, default=0.01, help='initialization for synthetic learning rate')
+    parser.add_argument('--lr_net', type=float, default=0.001)
 
     parser.add_argument('--lr_init', type=float, default=0.01, help='how to init lr (alpha)')
 
