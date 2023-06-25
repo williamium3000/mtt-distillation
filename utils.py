@@ -9,6 +9,8 @@ import torch.nn.functional as F
 import os
 import kornia as K
 import tqdm
+from sklearn.model_selection import train_test_split
+
 from torch.utils.data import Dataset
 from torchvision import datasets, transforms
 from scipy.ndimage.interpolation import rotate as scipyrotate
@@ -113,6 +115,34 @@ def get_dataset(dataset, data_path, batch_size=1, subset="imagenette", args=None
         class_map = {x: i for i, x in enumerate(config.img_net_classes)}
         class_map_inv = {i: x for i, x in enumerate(config.img_net_classes)}
         class_names = None
+    
+    elif dataset == 'PACS':
+        channel = 3
+        im_size = (224, 224)
+        num_classes = 7
+
+        mean = [0.485, 0.456, 0.406]
+        std = [0.229, 0.224, 0.225]
+        if args.zca:
+            transform = transforms.Compose([transforms.ToTensor(),
+                                        transforms.Resize(im_size),
+                                        transforms.CenterCrop(im_size)])
+        else:
+            transform = transforms.Compose([transforms.ToTensor(),
+                                            transforms.Normalize(mean=mean, std=std),
+                                            transforms.Resize(im_size),
+                                            transforms.CenterCrop(im_size)])
+
+        dataset = datasets.ImageFolder(os.path.join(data_path, subset), transform=transform) # no augmentation
+        val_size = int(len(dataset) * 0.1)
+        indices = list(range(len(dataset)))
+        train_idx, val_idx = train_test_split(indices, test_size=val_size)
+        
+        dst_train = torch.utils.data.Subset(dataset, train_idx)
+        dst_test = torch.utils.data.Subset(dataset, val_idx)
+        dst_test = datasets.ImageFolder(os.path.join(data_path, subset), transform=transform) # no augmentation
+        class_names = dst_train.classes
+        class_map = {x:x for x in range(num_classes)}
 
 
     elif dataset.startswith('CIFAR100'):
