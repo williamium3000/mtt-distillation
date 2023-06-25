@@ -7,4 +7,4 @@ CUDA_VISIBLE_DEVICES=6 python buffer.py \
     --dataset=PACS --model=ResNet18_ImageNet \
     --train_epochs=50 --num_experts=50 \
     --buffer_path=work_dirs/PACS_ResNet18_experts50_50e \
-    --data_path=../dataSet/PACS --subset  2>&1 | tee $save_path/$now.txt
+    --data_path=../dataSet/PACS --subset cartoon 2>&1 | tee $save_path/$now.txt
