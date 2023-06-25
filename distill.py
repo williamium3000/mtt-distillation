@@ -326,9 +326,12 @@ def main(args):
 
         target_params = expert_trajectory[start_epoch+args.expert_epochs]
         target_params = torch.cat([p.data.to(args.device).reshape(-1) for p in target_params], 0)
-
-        student_params = [torch.cat([p.data.to(args.device).reshape(-1) for p in starting_params], 0).requires_grad_(True)]
-
+        
+        if args.noisetune:
+            student_params = [torch.cat([p.data.cuda().reshape(-1) + (torch.rand(p.size()) - 0.5) * 0.15 * torch.std(p) for p in starting_params], 0).requires_grad_(True)]
+        else:
+            student_params = [torch.cat([p.data.cuda().reshape(-1) for p in starting_params], 0).requires_grad_(True)]
+        
         starting_params = torch.cat([p.data.to(args.device).reshape(-1) for p in starting_params], 0)
 
         syn_images = image_syn
@@ -457,6 +460,7 @@ if __name__ == '__main__':
     parser.add_argument('--zca', action='store_true', help="do ZCA whitening")
 
     parser.add_argument('--load_all', action='store_true', help="only use if you can fit all expert trajectories into RAM")
+    parser.add_argument('--noisetune', action='store_true', help="only use if you can fit all expert trajectories into RAM")
 
     parser.add_argument('--no_aug', type=bool, default=False, help='this turns off diff aug during distillation')
 
