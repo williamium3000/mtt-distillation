@@ -19,7 +19,7 @@ def train_one_epoch(train_loader, model, optimizer, logger, scheduler=None, sche
             imgs = imgs.cuda()
             targets = targets.cuda()
         
-        imgs = DiffAugment(imgs, "color_crop_cutout_flip_scale_rotate", param=ParamDiffAug())
+        imgs = DiffAugment(imgs, "color_crop_flip", param=ParamDiffAug())
         
         optimizer.zero_grad()
         

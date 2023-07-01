@@ -133,7 +133,7 @@ def main():
                                 cuda=args.cuda,
                                 logger=logger,
                                 args={
-                                    "batch_size": 32,
+                                    "batch_size": 64,
                                     "epochs": 1,
                                     "max_norm": 10,
                                     "optim": dict(
