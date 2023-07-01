@@ -9,8 +9,7 @@ import time
 
 from fed_utils.aggregator import Aggregators
 from fed_utils.aggregator import SerializationTool
-from fed_utils.utils import Logger, save_model
-from test import evaluate
+from fed_utils.utils import Logger, save_model, AverageMeter
 
 from fed_utils.serial_trainer import SerialTrainer
 from utils import get_dataset, get_network, get_eval_pool, evaluate_synset, get_time, DiffAugment, ParamDiffAug
@@ -78,21 +77,42 @@ parser.add_argument('--max_experts', type=int, default=None, help='number of exp
 parser.add_argument('--force_save', action='store_true', help='this will save images for 50ipc')
 parser.add_argument('--syn_path', type=str)
 
-parser.add_argument('--save-path', type=str, required=True)
 parser.add_argument("--cuda", type=bool, default=True)
 parser.add_argument("--save_every", type=int, default=10000) # default do not save
+parser.add_argument("--save_dir", type=str) # default do not save
 
+def evaluate(model, test_loader):
+    """Evaluate classify task model accuracy."""
+    criterion = nn.CrossEntropyLoss()
+    model.eval()
+    gpu = next(model.parameters()).device
+
+    loss_ = AverageMeter()
+    acc_ = AverageMeter()
+    with torch.no_grad():
+        for inputs, labels in test_loader:
+            inputs = inputs.to(gpu)
+            labels = labels.to(gpu)
+
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+
+            _, predicted = torch.max(outputs, 1)
+            loss_.update(loss.item())
+            acc_.update(torch.sum(predicted.eq(labels)).item(), len(labels))
+
+    return loss_.avg, acc_.avg
 
 def main():
     args = parser.parse_args()
 
-    os.makedirs(args.save_path, exist_ok=True)
+    os.makedirs(args.save_dir, exist_ok=True)
     timestamp = time.strftime('%Y%m%d_%H%M%S', time.localtime())
-    logger = Logger(__name__, os.path.join(args.save_path, f"{timestamp}.log"))
+    logger = Logger(__name__, os.path.join(args.save_dir, f"{timestamp}.log"))
         
     channel, im_size, num_classes, class_names, mean, std, dst_train, dst_test, testloader, loader_train_dict, class_map, class_map_inv, data_indices = \
         get_dataset(args.dataset, args.data_path, args.batch_real, subset=None, test_subset=args.subset, args=args)
-    model = get_network('ConvNet', channel, num_classes, im_size).to(args.device)
+    model = get_network('ConvNet', channel, num_classes, im_size)
     if args.cuda:
         model = model.cuda()
     
@@ -128,7 +148,7 @@ def main():
 
 
     # train procedure
-    to_select = [i for i in range(4)]
+    to_select = [i for i in range(3)]
     best_acc = 0.0
 
     for round in range(100):
@@ -147,20 +167,20 @@ def main():
             logger.info("-------------------------------------")
             logger.info(f"best acc {acc:.2f} updated and ckpt saved.")
             logger.info("-------------------------------------")
-            if os.path.exists(os.path.join(args.save_path, f"best_{best_acc:.2f}.pth")):
-                os.remove(os.path.join(args.save_path, f"best_{best_acc:.2f}.pth"))
+            if os.path.exists(os.path.join(args.save_dir, f"best_{best_acc:.2f}.pth")):
+                os.remove(os.path.join(args.save_dir, f"best_{best_acc:.2f}.pth"))
             best_acc = acc
             save_model(
                 model,
-                os.path.join(args.save_path, f"best_{best_acc:.2f}.pth"))
+                os.path.join(args.save_dir, f"best_{best_acc:.2f}.pth"))
         if args.save_every and (round + 1) % args.save_every == 0:
             save_model(
                 model,
-                os.path.join(args.save_path, f"epoch_{round + 1}.pth"))
+                os.path.join(args.save_dir, f"epoch_{round + 1}.pth"))
         
     save_model(
         model,
-        os.path.join(args.save_path, "last.pth"))
+        os.path.join(args.save_dir, "last.pth"))
     
 if __name__ == '__main__':
     main()

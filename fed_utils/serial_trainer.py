@@ -23,7 +23,8 @@ def train_one_epoch(train_loader, model, optimizer, logger, scheduler=None, sche
         
         optimizer.zero_grad()
         
-        outputs, loss = model(imgs, targets, return_loss=True)
+        outputs = model(imgs)
+        loss = torch.nn.CrossEntropyLoss()(outputs, targets)
         loss.backward()
         if max_norm is not None:
             torch.nn.utils.clip_grad_norm_(parameters=model.parameters(), max_norm=max_norm) # clip gradients

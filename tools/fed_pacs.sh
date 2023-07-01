@@ -1,5 +1,5 @@
 subset=$1
-save_path=work_dirs/distill/PACS_ResNet18_ImageNet_experts50_50e_10ipc_5synsteps_$subset
+save_path=work_dirs/fedavg/PACS_ResNet18_ImageNet_$subset
 now=$(date +"%Y%m%d_%H%M%S")
 
 mkdir -p $save_path

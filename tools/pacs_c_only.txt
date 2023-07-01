@@ -1,0 +1,4 @@
+logged_files/PACS/rich-resonance-72/images_best.pt logged_files/PACS/rich-resonance-72/labels_best.pt
+logged_files/PACS/earthy-jazz-73/images_best.pt logged_files/PACS/earthy-jazz-73/labels_best.pt
+logged_files/PACS/dulcet-spaceship-71/images_best.pt logged_files/PACS/dulcet-spaceship-71/labels_best.pt
+logged_files/PACS/fast-microwave-70/images_best.pt logged_files/PACS/fast-microwave-70/labels_best.pt
