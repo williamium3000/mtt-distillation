@@ -132,17 +132,21 @@ def get_dataset(dataset, data_path, batch_size=1, subset="imagenette", args=None
                                             transforms.Normalize(mean=mean, std=std),
                                             transforms.Resize(im_size),
                                             transforms.CenterCrop(im_size)])
-
-        dataset = datasets.ImageFolder(os.path.join(data_path, subset), transform=transform) # no augmentation
-        val_size = int(len(dataset) * 0.1)
-        indices = list(range(len(dataset)))
-        train_idx, val_idx = train_test_split(indices, test_size=val_size)
-        
-        dst_train = torch.utils.data.Subset(dataset, train_idx)
-        dst_test = torch.utils.data.Subset(dataset, val_idx)
-        dst_test = datasets.ImageFolder(os.path.join(data_path, subset), transform=transform) # no augmentation
-        class_names = dataset.classes
-        class_map = {x:x for x in range(num_classes)}
+        if subset is not None:
+            dataset = datasets.ImageFolder(os.path.join(data_path, subset), transform=transform) # no augmentation
+            val_size = int(len(dataset) * 0.1)
+            indices = list(range(len(dataset)))
+            train_idx, val_idx = train_test_split(indices, test_size=val_size)
+            
+            dst_train = torch.utils.data.Subset(dataset, train_idx)
+            dst_test = torch.utils.data.Subset(dataset, val_idx)
+            dst_test = datasets.ImageFolder(os.path.join(data_path, subset), transform=transform) # no augmentation
+            class_names = dataset.classes
+            class_map = {x:x for x in range(num_classes)}
+        else:
+            datasets 
+            for subset in os.listdir(data_path):
+                
 
 
     elif dataset.startswith('CIFAR100'):
