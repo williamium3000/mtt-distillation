@@ -42,9 +42,9 @@ def main(args):
     syn_images = []
     syn_labels = []
     for line in sythetic_path:
-        image_path, label_path = line.split(" ")
-        syn_images.append(torch.load(image_path, map_location="cpu").requires_grad_(False).to(args.device))
-        syn_labels.append(torch.load(label_path, map_location="cpu").requires_grad_(False).to(args.device))
+        image_path, label_path = line.strip().split(" ")
+        syn_images.append(torch.load(image_path.strip(), map_location="cpu").requires_grad_(False).to(args.device))
+        syn_labels.append(torch.load(label_path.strip(), map_location="cpu").requires_grad_(False).to(args.device))
     image_syn = torch.cat(syn_images, dim=0)
     label_syn = torch.cat(syn_labels, dim=0)
 
@@ -91,7 +91,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--ipc', type=int, default=1, help='image(s) per class')
 
-    parser.add_argument('--eval_mode', type=str, def_ault='S',
+    parser.add_argument('--eval_mode', type=str, default='S',
                         help='eval_mode, check utils.py for more info')
 
     parser.add_argument('--num_eval', type=int, default=5, help='how many networks to evaluate on')
