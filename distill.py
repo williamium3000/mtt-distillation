@@ -230,7 +230,7 @@ def main(args):
             with torch.no_grad():
                 image_save = image_syn.cuda()
 
-                save_dir = os.path.join(".", "logged_files", args.dataset, wandb.run.name)
+                save_dir = args.save_dir
 
                 if not os.path.exists(save_dir):
                     os.makedirs(save_dir)
@@ -418,6 +418,7 @@ if __name__ == '__main__':
     parser.add_argument('--subset', type=str, default='imagenette', help='ImageNet subset. This only does anything when --dataset=ImageNet')
 
     parser.add_argument('--model', type=str, default='ConvNet', help='model')
+    parser.add_argument('--save_dir', type=str)
 
     parser.add_argument('--ipc', type=int, default=1, help='image(s) per class')
 
