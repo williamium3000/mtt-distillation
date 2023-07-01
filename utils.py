@@ -45,7 +45,7 @@ class Config:
 
 config = Config()
 
-def get_dataset(dataset, data_path, batch_size=1, subset="imagenette", args=None):
+def get_dataset(dataset, data_path, batch_size=1, subset="imagenette", test_subset=None, args=None):
 
     class_map = None
     loader_train_dict = None
@@ -144,9 +144,22 @@ def get_dataset(dataset, data_path, batch_size=1, subset="imagenette", args=None
             class_names = dataset.classes
             class_map = {x:x for x in range(num_classes)}
         else:
-            datasets 
+            train_datasets = []
             for subset in os.listdir(data_path):
-                
+                if subset != test_subset:
+                    print(f"adding train set {subset}")
+                    train_datasets.append(
+                        datasets.ImageFolder(root=os.path.join(data_path, subset), transform=transform)
+                    )
+            dst_train = torch.utils.data.ConcatDataset(train_datasets)
+            data_indices = {}
+            r = 0
+            for i, l in enumerate(dst_train.cummulative_sizes):
+                data_indices[i] = np.array(list(range(r, l)))
+                r = l
+            dst_test = datasets.ImageFolder(root=os.path.join(data_path, test_subset), transform=transform)
+            class_names = train_datasets[0].classes
+            class_map = {x:x for x in range(num_classes)}
 
 
     elif dataset.startswith('CIFAR100'):
@@ -201,8 +214,10 @@ def get_dataset(dataset, data_path, batch_size=1, subset="imagenette", args=None
 
     testloader = torch.utils.data.DataLoader(dst_test, batch_size=128, shuffle=False, num_workers=2)
 
-
-    return channel, im_size, num_classes, class_names, mean, std, dst_train, dst_test, testloader, loader_train_dict, class_map, class_map_inv
+    if test_subset is not None:
+        return channel, im_size, num_classes, class_names, mean, std, dst_train, dst_test, testloader, loader_train_dict, class_map, class_map_inv, data_indices
+    else:
+        return channel, im_size, num_classes, class_names, mean, std, dst_train, dst_test, testloader, loader_train_dict, class_map, class_map_inv
 
 
 

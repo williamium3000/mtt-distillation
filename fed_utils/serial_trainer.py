@@ -7,7 +7,7 @@ from fedlab.utils import Logger
 from fedlab.core.client import SERIAL_TRAINER
 from fedlab.utils.serialization import SerializationTool
 from fedlab.utils.functional import AverageMeter
-
+from utils import DiffAugment, ParamDiffAug
 
 def train_one_epoch(train_loader, model, optimizer, logger, scheduler=None, scheduler_by_iter=False, max_norm=None, cuda=True):
     model.train()
@@ -18,7 +18,9 @@ def train_one_epoch(train_loader, model, optimizer, logger, scheduler=None, sche
         if cuda:
             imgs = imgs.cuda()
             targets = targets.cuda()
-            
+        
+        imgs = DiffAugment(imgs, "color_crop_cutout_flip_scale_rotate", param=ParamDiffAug())
+        
         optimizer.zero_grad()
         
         outputs, loss = model(imgs, targets, return_loss=True)
