@@ -128,10 +128,11 @@ def get_dataset(dataset, data_path, batch_size=1, subset="imagenette", test_subs
                                         transforms.Resize(im_size),
                                         transforms.CenterCrop(im_size)])
         else:
-            transform = transforms.Compose([transforms.ToTensor(),
-                                            transforms.Normalize(mean=mean, std=std),
-                                            transforms.Resize(im_size),
-                                            transforms.CenterCrop(im_size)])
+            transform = transforms.Compose([transforms.RandomResizedCrop(224),
+            transforms.RandomHorizontalFlip(),
+            transforms.ColorJitter(0.5, 0.5, 0.5, 0.25),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),])
         if subset is not None:
             dataset = datasets.ImageFolder(os.path.join(data_path, subset), transform=transform) # no augmentation
             val_size = int(len(dataset) * 0.1)
@@ -140,7 +141,13 @@ def get_dataset(dataset, data_path, batch_size=1, subset="imagenette", test_subs
             
             dst_train = torch.utils.data.Subset(dataset, train_idx)
             dst_test = torch.utils.data.Subset(dataset, val_idx)
-            dst_test = datasets.ImageFolder(os.path.join(data_path, subset), transform=transform) # no augmentation
+            val_transform = transforms.Compose([
+                    transforms.Resize((256, 256)),
+                    transforms.CenterCrop(224),
+                    transforms.ToTensor(),
+                    transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+            ])
+            dst_test = datasets.ImageFolder(os.path.join(data_path, subset), transform=val_transform) # no augmentation
             class_names = dataset.classes
             class_map = {x:x for x in range(num_classes)}
         else:
