@@ -41,11 +41,48 @@ def train_one_epoch(train_loader, model, optimizer, logger, scheduler=None, sche
         
     return model, correct / total, train_loss / (batch_idx + 1)
 
+
+def train_one_epoch_syn(train_loader, model, optimizer, logger, scheduler=None, scheduler_by_iter=False, max_norm=None, cuda=True, sythetic_image=None, sythetic_label=None):
+    model.train()
+    train_loss = 0.0
+    total = 0.0
+    correct = 0.0
+    for batch_idx, (imgs, targets) in enumerate(train_loader):
+        if cuda:
+            imgs = imgs.cuda()
+            targets = targets.cuda()
+        
+        sythetic_image = DiffAugment(sythetic_image, "color_crop_cutout_flip_scale_rotate", param=ParamDiffAug())
+        
+        imgs = torch.cat([imgs, sythetic_image])
+        targets = torch.cat([targets, sythetic_label])
+        optimizer.zero_grad()
+        
+        outputs = model(imgs)
+        loss = torch.nn.CrossEntropyLoss()(outputs, targets)
+        loss.backward()
+        if max_norm is not None:
+            torch.nn.utils.clip_grad_norm_(parameters=model.parameters(), max_norm=max_norm) # clip gradients
+        optimizer.step()
+        
+        if scheduler_by_iter and scheduler:
+            scheduler.step()
+        train_loss += loss.item()
+        _, predicted = outputs.max(1)
+        total += targets.size(0)
+        correct += predicted.eq(targets).sum().item()
+        if (batch_idx + 1) % 20 == 0:
+            logger.info(f"Iter {batch_idx + 1}: train acc {correct / total * 100:.2f} train loss {train_loss / (batch_idx + 1):.3f}")
+        
+    return model, correct / total, train_loss / (batch_idx + 1)
+
 class SerialTrainer(SubsetSerialTrainerStateDict):
     def __init__(self, 
                  model,
                  dataset,
                  data_slices,
+                 sythetic_image=None,
+                 sythetic_label=None,
                  aggregator=None,
                  cuda=True,
                  logger=Logger(),
@@ -60,6 +97,8 @@ class SerialTrainer(SubsetSerialTrainerStateDict):
         self.dataset = dataset
         self.data_slices = data_slices  # [0, client_num)
         self.args = args
+        self.sythetic_image = sythetic_image
+        self.sythetic_label = sythetic_label
     
     
     def train(self, model_parameters, id_list, aggregate=False, **kwargs):
@@ -138,13 +177,25 @@ class SerialTrainer(SubsetSerialTrainerStateDict):
         optimizer = getattr(torch.optim, self.args["optim"]["name"])(params_to_update, **self.args["optim"]["kwargs"])
         
         for _ in range(epochs):
-            _, acc, loss = train_one_epoch(
-                train_loader=train_loader,
-                model=self.model,
-                optimizer=optimizer,
-                max_norm=self.args["max_norm"] if "max_norm" in self.args.keys() else None,
-                cuda=self.cuda,
-                logger=self._LOGGER,
-                )
+            if self.sythetic_image is None:
+                _, acc, loss = train_one_epoch(
+                    train_loader=train_loader,
+                    model=self.model,
+                    optimizer=optimizer,
+                    max_norm=self.args["max_norm"] if "max_norm" in self.args.keys() else None,
+                    cuda=self.cuda,
+                    logger=self._LOGGER,
+                    )
+            else:
+                _, acc, loss = train_one_epoch_syn(
+                    train_loader=train_loader,
+                    model=self.model,
+                    optimizer=optimizer,
+                    max_norm=self.args["max_norm"] if "max_norm" in self.args.keys() else None,
+                    cuda=self.cuda,
+                    logger=self._LOGGER,
+                    sythetic_image=self.sythetic_image,
+                    sythetic_label=self.sythetic_label,
+                    )
                 
         return loss, acc
