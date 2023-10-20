@@ -80,7 +80,6 @@ parser.add_argument('--syn_path', type=str)
 parser.add_argument("--cuda", type=bool, default=True)
 parser.add_argument("--save_every", type=int, default=10000) # default do not save
 parser.add_argument("--save_dir", type=str) # default do not save
-parser.add_argument('--syn_path', type=str)
 
 def evaluate(model, test_loader):
     """Evaluate classify task model accuracy."""
@@ -113,7 +112,7 @@ def main():
         
     channel, im_size, num_classes, class_names, mean, std, dst_train, dst_test, testloader, loader_train_dict, class_map, class_map_inv, data_indices = \
         get_dataset(args.dataset, args.data_path, args.batch_real, subset=None, test_subset=args.subset, args=args)
-    model = get_network('ConvNet', channel, num_classes, im_size)
+    model = get_network(args.model, channel, num_classes, im_size)
     if args.cuda:
         model = model.cuda()
     
@@ -139,7 +138,7 @@ def main():
     if args.cuda:
         image_syn = image_syn.cuda()
         label_syn = label_syn.cuda()
-
+    print("sythetic image size: ", image_syn.shape)
     trainer = SerialTrainer(model=local_model,
                                 dataset=dst_train,
                                 data_slices=data_indices,

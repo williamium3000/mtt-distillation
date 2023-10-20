@@ -1,7 +1,7 @@
 subset=$1
 
 
-CUDA_VISIBLE_DEVICES=1 python eval_joint.py \
+CUDA_VISIBLE_DEVICES=2 python eval_joint.py \
     --dataset=PACS --subset $subset --model=ResNet18_ImageNet --ipc=10 --num_eval 1 --lr_net 0.01 \
     --syn_steps=5 --expert_epochs=3 \
     --max_start_epoch=35 --lr_img=100 \

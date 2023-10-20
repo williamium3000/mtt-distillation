@@ -52,10 +52,13 @@ def train_one_epoch_syn(train_loader, model, optimizer, logger, scheduler=None, 
             imgs = imgs.cuda()
             targets = targets.cuda()
         
-        sythetic_image = DiffAugment(sythetic_image, "color_crop_cutout_flip_scale_rotate", param=ParamDiffAug())
+        selected_indices = torch.randperm(sythetic_image.size(0))[:32]
+        cur_images = sythetic_image[selected_indices]
+        cur_label = sythetic_label[selected_indices]
+        cur_images = DiffAugment(cur_images, "color_crop_cutout_flip_scale_rotate", param=ParamDiffAug())
         
-        imgs = torch.cat([imgs, sythetic_image])
-        targets = torch.cat([targets, sythetic_label])
+        imgs = torch.cat([imgs, cur_images])
+        targets = torch.cat([targets, cur_label])
         optimizer.zero_grad()
         
         outputs = model(imgs)

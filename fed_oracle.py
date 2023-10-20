@@ -112,7 +112,7 @@ def main():
         
     channel, im_size, num_classes, class_names, mean, std, dst_train, dst_test, testloader, loader_train_dict, class_map, class_map_inv, data_indices = \
         get_dataset(args.dataset, args.data_path, args.batch_real, subset=None, test_subset=args.subset, args=args)
-    model = get_network('ConvNet', channel, num_classes, im_size)
+    model = get_network(args.model, channel, num_classes, im_size)
     if args.cuda:
         model = model.cuda()
     
